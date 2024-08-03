@@ -1,0 +1,2 @@
+#How many seconds a cleaned node lasts before decreasing its level.
+tidepod_clean_lifetime (Cleaned Node Lifetime) int 120
