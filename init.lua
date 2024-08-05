@@ -1,5 +1,6 @@
 --Settings
 local LIFETIME = minetest.settings:get("tidepod_clean_lifetime") or 120
+local AMBIENT_LIGHT = math.min(math.max(minetest.settings:get("hospital_ambient_light") or 5, 0), 14)
 
 --Particles
 local function clean_particles(pos)
@@ -318,3 +319,123 @@ minetest.register_node("tidepod_zero:cleaned_cleaned_matter_blob", {
         minetest.sound_play("step", {pos=pos, gain=1.0})
     end
 })
+
+--Various nodes found in the hospital
+minetest.register_node("tidepod_zero:cleaned_air", {
+    description = "| || || |_",
+    drawtype = "airlike",
+    walkable = false,
+    paramtype = "light",
+    sunlight_propagates = true,
+    light_source = AMBIENT_LIGHT
+})
+
+minetest.register_node("tidepod_zero:super_clean", {
+    description = "Super Clean",
+    tiles = {"cleanest.png"},
+    sounds = {footstep={name="step", gain=1.0}},
+    on_punch = function(pos)
+        minetest.sound_play("step", {pos=pos, gain=1.0})
+    end
+})
+
+minetest.register_node("tidepod_zero:cleaned_floor", {
+    description = "Cleaned Floor",
+    tiles = {"cleaned_floor.png"},
+    sounds = {footstep={name="step", gain=1.0}},
+    on_punch = function(pos)
+        minetest.sound_play("step", {pos=pos, gain=1.0})
+    end
+})
+
+minetest.register_node("tidepod_zero:bed_head", {
+    description = "Bed Head",
+    drawtype = "nodebox",
+    node_box = {type="fixed", fixed={
+        {-0.5, -0.25, -0.5, 0.5, 0, 0.5},
+        {-0.5, -0.5, 0.375, -0.375, -0.25, 0.5},
+        {0.375, -0.5, 0.375, 0.5, -0.25, 0.5}
+    }},
+    tiles = {"bed_head.png", "cleanest.png", "bed_head_side.png^[transform4", "bed_head_side.png", "bed_head_end.png", "bed_foot_end.png"},
+    paramtype = "light",
+    paramtype2 = "4dir",
+    sunlight_propagates = true
+})
+
+minetest.register_node("tidepod_zero:bed_foot", {
+    description = "Bed Foot",
+    drawtype = "nodebox",
+    node_box = {type="fixed", fixed={
+        {-0.5, -0.25, -0.5, 0.5, 0, 0.5},
+        {-0.5, -0.5, -0.5, -0.375, -0.25, -0.375},
+        {0.375, -0.5, -0.5, 0.5, -0.25, -0.375}
+    }},
+    tiles = {"bed_foot.png", "cleanest.png", "bed_foot_side.png^[transform4", "bed_foot_side.png", "bed_foot_end.png", "bed_foot_end.png"},
+    paramtype = "light",
+    paramtype2 = "4dir",
+    sunlight_propagates = true
+})
+minetest.register_node("tidepod_zero:blue_cross", {
+    description = "Blue Cross",
+    drawtype = "signlike",
+    tiles = {"blue_cross.png"},
+    inventory_image = "blue_cross.png",
+    paramtype = "light",
+    paramtype2 = "wallmounted",
+    sunlight_propagates = true,
+    walkable = false
+})
+
+minetest.register_node("tidepod_zero:cleaned_slab_lower", {
+    description = "Cleaned Slab",
+    drawtype = "nodebox",
+    node_box = {type="fixed", fixed={-0.5, -0.5, -0.5, 0.5, 0, 0.5}},
+    tiles = {"cleaned_floor.png"},
+    paramtype = "light",
+    sunlight_propagates = true,
+    sounds = {footstep={name="step", gain=1.0}},
+    on_punch = function(pos)
+        minetest.sound_play("step", {pos=pos, gain=1.0})
+    end
+})
+
+minetest.register_node("tidepod_zero:cleaned_slab_upper", {
+    description = "Cleaned Slab",
+    drawtype = "nodebox",
+    node_box = {type="fixed", fixed={-0.5, 0, -0.5, 0.5, 0.5, 0.5}},
+    tiles = {"cleaned_floor.png"},
+    paramtype = "light",
+    sunlight_propagates = true,
+    sounds = {footstep={name="step", gain=1.0}},
+    on_punch = function(pos)
+        minetest.sound_play("step", {pos=pos, gain=1.0})
+    end
+})
+
+minetest.register_craftitem("tidepod_zero:remover", {
+    description = "Remover",
+    inventory_image = "matter_annihilator.png",
+    stack_max = 1,
+    groups = {not_in_creative_inventory=1},
+    on_use = function (_, _, pointed)
+        if pointed.type ~= "node" then return end
+        minetest.remove_node(pointed.under)
+    end
+})
+
+minetest.register_node("tidepod_zero:portal", {
+    description = "Portal",
+    drawtype = "nodebox",
+    node_box = {type="fixed", fixed={-0.5, -0.5, -0.5, 0.5, 0, 0.5}},
+    tiles = {"portal.png"},
+    paramtype = "light",
+    sunlight_propagates = true,
+    light_source = 14
+})
+
+do
+    local defs = table.copy(minetest.registered_nodes["tidepod_zero:tidepod_generator"])
+    defs.groups = {}
+    defs.description = "Unbreakable "..defs.description
+    minetest.register_node("tidepod_zero:unbreakable_tidepod_generator", defs)
+end

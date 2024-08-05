@@ -1,2 +1,5 @@
 #How many seconds a cleaned node lasts before decreasing its level.
 tidepod_clean_lifetime (Cleaned Node Lifetime) int 120
+
+#Ambient light level in the hospital dimension.
+hospital_ambient_light (Hospital Ambient Light) int 5
