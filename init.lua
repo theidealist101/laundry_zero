@@ -66,6 +66,50 @@ local function generate_particles(pos)
     }
 end
 
+local function portal_particles(pos)
+    return {
+        amount = 1,
+        time = 1,
+        minpos = {x = pos.x - 0.5, y = pos.y - 0.5, z = pos.z - 0.5},
+        maxpos = {x = pos.x + 0.5, y = pos.y + 0.5, z = pos.z + 0.5},
+        minvel = {x = 0, y = 1, z = 0},
+        maxvel = {x = 0, y = 1, z = 0},
+        minacc = {x = 0, y = 0, z = 0},
+        maxacc = {x = 0, y = 0, z = 0},
+        minexptime = 1,
+        maxexptime = 2,
+        minsize = 2,
+        maxsize = 4,
+        collisiondetection = false,
+        vertical = false,
+        texture = "portal_particles.png",
+        animation = {type="vertical_frames", length=-1},
+        glow = 10
+    }
+end
+
+local function teleport_particles(pos)
+    return {
+        amount = 100,
+        time = 0.1,
+        minpos = {x = pos.x - 0.5, y = pos.y - 0.5, z = pos.z - 0.5},
+        maxpos = {x = pos.x + 0.5, y = pos.y + 0.5, z = pos.z + 0.5},
+        minvel = {x = -5, y = -5, z = -5},
+        maxvel = {x = 5, y = 5, z = 5},
+        minacc = {x = 0, y = 0, z = 0},
+        maxacc = {x = 0, y = 0, z = 0},
+        minexptime = 1,
+        maxexptime = 2,
+        minsize = 2,
+        maxsize = 4,
+        collisiondetection = false,
+        vertical = false,
+        texture = "portal_particles.png",
+        animation = {type="vertical_frames", length=-1},
+        glow = 10
+    }
+end
+
 --Tidepod generator node, place a charged particle on it to turn it into a tidepod, uses no power
 minetest.register_node("tidepod_zero:tidepod_generator", {
     description = "Tide Pod Generator",
@@ -423,19 +467,58 @@ minetest.register_craftitem("tidepod_zero:remover", {
     end
 })
 
-minetest.register_node("tidepod_zero:portal", {
-    description = "Portal",
-    drawtype = "nodebox",
-    node_box = {type="fixed", fixed={-0.5, -0.5, -0.5, 0.5, 0, 0.5}},
-    tiles = {"portal.png"},
-    paramtype = "light",
-    sunlight_propagates = true,
-    light_source = 14
-})
-
 do
     local defs = table.copy(minetest.registered_nodes["tidepod_zero:tidepod_generator"])
     defs.groups = {}
     defs.description = "Unbreakable "..defs.description
     minetest.register_node("tidepod_zero:unbreakable_tidepod_generator", defs)
 end
+
+--Portal, special hospital node which teleports you to the core on entering
+minetest.register_node("tidepod_zero:portal", {
+    description = "Portal",
+    drawtype = "nodebox",
+    node_box = {type="fixed", fixed={-0.5, -0.5, -0.5, 0.5, 0, 0.5}},
+    tiles = {{name="portal.png^[opacity:224", animation={type="vertical_frames", length=0.3}}, "blank.png"},
+    inventory_image = "portal.png^[verticalframe:2:1",
+    wield_image = "portal.png^[verticalframe:2:1",
+    use_texture_alpha = "blend",
+    paramtype = "light",
+    sunlight_propagates = true,
+    walkable = false,
+    light_source = 14
+})
+
+minetest.register_abm({
+    nodenames = {"tidepod_zero:portal"},
+    interval = 1,
+    chance = 2,
+    action = function (pos)
+        minetest.add_particlespawner(portal_particles(pos))
+    end
+})
+
+local core_pos = vector.new(0, 1, 0)
+
+minetest.register_globalstep(function()
+    for _, player in ipairs(minetest.get_connected_players()) do
+        if minetest.get_node(vector.apply(player:get_pos(), math.round)).name == "tidepod_zero:portal" then
+            player:set_pos(core_pos)
+            minetest.add_particlespawner(teleport_particles(core_pos))
+            displayDialougeLine(player:get_player_name(), "Beamed you back to the Core.")
+        end
+    end
+end)
+
+--Disable /core when in hospital - that would be cheating
+minetest.override_chatcommand("core", {
+    func = function (name)
+        local player = minetest.get_player_by_name(name)
+        if player:get_pos().y > -30000 or minetest.check_player_privs(name, "teleport") then
+            player:set_pos(core_pos)
+            displayDialougeLine(name, "Beamed you back to the Core.")
+        else
+            displayDialougeLine(name, "Out of range, unable to beam back to the Core.")
+        end
+    end
+})
