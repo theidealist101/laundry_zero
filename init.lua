@@ -159,7 +159,8 @@ end)
 
 --Cleanable nodes and their cleaned equivalents
 local cleaned = {
-    ["sbz_resources:charged_field_residue"] = "sbz_resources:simple_charged_field"
+    ["sbz_resources:charged_field_residue"] = "sbz_resources:simple_charged_field",
+    ["tidepod_zero:cleaned_matter_blob"] = "tidepod_zero:cleaned_cleaned_matter_blob"
 }
 
 local intervals = {}
@@ -275,6 +276,7 @@ end
 local function register_cleaned_node(nodename, cleaner, delayed)
     local defs = table.copy(minetest.registered_nodes[nodename])
     local newname = "tidepod_zero:cleaned_"..string.sub(nodename, 15)
+    defs.description = "Cleaned "..defs.description
     defs.on_timer = function (pos)
         local node = minetest.get_node(pos)
         if check_lifetime(pos, node) then return end
@@ -306,3 +308,13 @@ register_cleaned_node("sbz_resources:matter_blob", true)
 register_cleaned_node("sbz_resources:simple_matter_extractor")
 register_cleaned_node("sbz_resources:advanced_matter_extractor")
 register_cleaned_node("sbz_resources:simple_charge_generator", false, true)
+
+minetest.register_node("tidepod_zero:cleaned_cleaned_matter_blob", {
+    description = "Cleaned Cleaned Matter Blob",
+    tiles = {"cleanest.png"},
+    groups = {matter=1, cracky=3},
+    sounds = {footstep={name="step", gain=1.0}},
+    on_punch = function(pos)
+        minetest.sound_play("step", {pos=pos, gain=1.0})
+    end
+})
