@@ -556,9 +556,9 @@ local layers = {
 }
 
 local room_types = {
-    {"hospital_room", 2, {true, false, false, false}},
-    {"hospital_cross", 1, {true, true, true, true}},
-    {"hospital_junct", 1, {true, true, false, true}},
+    {"hospital_room", 3, {true, false, false, false}},
+    {"hospital_cross", 2, {true, true, true, true}},
+    {"hospital_junct", 2, {true, true, false, true}},
     {"hospital_corner", 3, {true, false, false, true}},
     {"hospital_corridor", 3, {false, true, false, true}},
     {"hospital_staircase_bottom", 2, {true, false, false, false}},
