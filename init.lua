@@ -1,6 +1,7 @@
 --Settings
 local LIFETIME = minetest.settings:get("tidepod_clean_lifetime") or 120
 local AMBIENT_LIGHT = math.min(math.max(minetest.settings:get("hospital_ambient_light") or 5, 0), 14)
+local MODPATH = minetest.get_modpath("tidepod_zero")
 
 --Particles
 local function clean_particles(pos)
@@ -110,6 +111,27 @@ local function teleport_particles(pos)
     }
 end
 
+--New quests for tidepod-related stuff
+table.insert_all(quests, {
+    {title="Laundry Detergent", text="Did you know you can make detergent as well for some reason? Just craft a Tide Pod Generator using a Conversion Chamber (that's a Matter Blob, a Matter Annihilator and a Retaining Circuit), along with 4 Core Dust, 3 Stone and a Simple Charged Field. Once you've done that, insert Charged Particles into it and it'll turn them into Tide Pods."},
+    {title="Cleaning Things", text="So once you have Tide Pods, what can you do with them? They're meant for cleaning clothes, but apparently you're some kind of disembodied particle trail, you don't have clothes. Wait, that means you're naked. That's weird.\n\nBut what you CAN do with them is clean things. If you use a Tide Pod on a machine it'll make it cleaner and more efficient for a little while - and the effect does stack! Try using it on stuff and see what happens.\n\nBut DON'T EAT THEM. They're not good for you."}
+})
+
+local secret_quests = {
+    ["Tide Pod Challenge"] = "You really did it, didn't you. You ate a Tide Pod. You awful person. See what it did to you.\n\n...I wonder what would happen if you did it again.",
+    ["Backrooms...?"] = "Looks like you've eaten too many Tide Pods and been taken to hospital. We've lost all trace of the Core and can't beam you back - but there might be some other way of getting back from here."
+}
+
+--Secret quests for tidepod eating
+local function grant_secret_achievement(player, name)
+    local playername = player:get_player_name()
+    local text = secret_quests[name]
+    if text and not is_achievement_unlocked(playername, name) then
+        table.insert(quests, {title=name, text=secret_quests[name]})
+        unlock_achievement(playername, name)
+    end
+end
+
 --Tidepod generator node, place a charged particle on it to turn it into a tidepod, uses no power
 minetest.register_node("tidepod_zero:tidepod_generator", {
     description = "Tide Pod Generator",
@@ -194,6 +216,10 @@ minetest.register_globalstep(function(dtime)
         local tidepod_elapsed = meta:get_float("tidepod_elapsed")
         if tidepod_elapsed < tidepod_timeout then
             meta:set_float("tidepod_elapsed", tidepod_elapsed+dtime)
+            if tidepod_elapsed >= 10 and player:get_pos().y > -30000 then --small chance of going to hospital with one, but with two it's certain
+                player:set_pos(vector.new(0, -30500, 0))
+                grant_secret_achievement(player, "Backrooms...?")
+            end
         elseif tidepod_elapsed > 0 then
             meta:set_float("tidepod_elapsed", 0)
             meta:set_float("tidepod_timeout", 0)
@@ -238,26 +264,6 @@ local function clean_node(pos)
         return true
     end
     return false
-end
-
---New quests for tidepod-related stuff
-table.insert_all(quests, {
-    {title="Laundry Detergent", text="Did you know you can make detergent as well for some reason? Just craft a Tide Pod Generator using a Conversion Chamber (that's a Matter Blob, a Matter Annihilator and a Retaining Circuit), along with 4 Core Dust, 3 Stone and a Simple Charged Field. Once you've done that, insert Charged Particles into it and it'll turn them into Tide Pods."},
-    {title="Cleaning Things", text="So once you have Tide Pods, what can you do with them? They're meant for cleaning clothes, but apparently you're some kind of disembodied particle trail, you don't have clothes. Wait, that means you're naked. That's weird.\n\nBut what you CAN do with them is clean things. If you use a Tide Pod on a machine it'll make it cleaner and more efficient for a little while - and the effect does stack! Try using it on stuff and see what happens.\n\nBut DON'T EAT THEM. They're not good for you."}
-})
-
-local secret_quests = {
-    ["Tide Pod Challenge"] = "You really did it, didn't you. You ate a Tide Pod. You awful person. See what it did to you.\n\n...I wonder what would happen if you did it again."
-}
-
---Secret quests for tidepod eating
-local function grant_secret_achievement(player, name)
-    local playername = player:get_player_name()
-    local text = secret_quests[name]
-    if text and not is_achievement_unlocked(playername, name) then
-        table.insert(quests, {title=name, text=secret_quests[name]})
-        unlock_achievement(playername, name)
-    end
 end
 
 --Tidepod, may be placed on machines to make them more efficient, or eaten to make you sick
@@ -369,6 +375,7 @@ minetest.register_node("tidepod_zero:cleaned_air", {
     description = "| || || |_",
     drawtype = "airlike",
     walkable = false,
+    pointable = false,
     paramtype = "light",
     sunlight_propagates = true,
     light_source = AMBIENT_LIGHT
@@ -427,7 +434,8 @@ minetest.register_node("tidepod_zero:blue_cross", {
     paramtype = "light",
     paramtype2 = "wallmounted",
     sunlight_propagates = true,
-    walkable = false
+    walkable = false,
+    pointable = false
 })
 
 minetest.register_node("tidepod_zero:cleaned_slab_lower", {
@@ -486,6 +494,7 @@ minetest.register_node("tidepod_zero:portal", {
     paramtype = "light",
     sunlight_propagates = true,
     walkable = false,
+    pointable = false,
     light_source = 14
 })
 
@@ -494,7 +503,9 @@ minetest.register_abm({
     interval = 1,
     chance = 2,
     action = function (pos)
-        minetest.add_particlespawner(portal_particles(pos))
+        if #minetest.get_objects_inside_radius(pos, 16) > 0 then --otherwise there would be literal thousands of particle spawners at once, breaking the client
+            minetest.add_particlespawner(portal_particles(pos))
+        end
     end
 })
 
@@ -522,3 +533,117 @@ minetest.override_chatcommand("core", {
         end
     end
 })
+
+--Terrain generation data
+local vm_data = {}
+
+local layers = {
+    [-30912] = minetest.get_content_id("tidepod_zero:super_clean"),
+    [-30001] = minetest.get_content_id("tidepod_zero:super_clean"),
+    [-30000] = minetest.get_content_id("tidepod_zero:portal")
+}
+
+local room_types = {
+    {"hospital_room", 2, {true, false, false, false}},
+    {"hospital_cross", 1, {true, true, true, true}},
+    {"hospital_junct", 1, {true, true, false, true}},
+    {"hospital_corner", 3, {true, false, false, true}},
+    {"hospital_corridor", 3, {false, true, false, true}},
+    {"hospital_staircase_bottom", 2, {true, false, false, false}},
+    {"hospital_staircase_top", 2, {true, false, false, false}},
+    {"hospital_portal", 1, {true, false, false, false}},
+    {"hospital_storage", 2, {true, false, false, false}}
+}
+
+--Some basic room functions
+local function rotate_connects(connects, rot)
+    if rot == 0 then return connects end
+    for _ = 1, rot do
+        connects = {connects[4], connects[1], connects[2], connects[3]}
+    end
+    return connects
+end
+
+local function room_fits(vm, pos, room_type, rot)
+    local tuple = room_types[room_type]
+    tuple = {tuple[1], rotate_connects(tuple[3], rot)}
+    for i = 0, 3 do
+        local testpos = pos+minetest.fourdir_to_dir((i+3)%4)*4 --I spent SO FUCKING LONG trying to find the bug and all I had to do was rotate this? I'm gonna kill somebody
+        local testnode = vm:get_node_at(testpos).name
+        if testnode ~= "air" and testnode ~= "ignore" and tuple[2][i+1] ~= (testnode == "tidepod_zero:cleaned_air") then
+            return false
+        end
+    end
+    return true
+end
+
+local function weighted_choice(options)
+    if #options == 0 then return {nil, nil} end
+    local total = 0
+    for _, tuple in ipairs(options) do
+        total = total+tuple[3]
+    end
+    local pointer = math.random()*total
+    for _, tuple in ipairs(options) do
+        pointer = pointer-tuple[3]
+        if pointer < 0 then return {tuple[1], tuple[2]} end
+    end
+    return {nil, nil} --shouldn't ever happen
+end
+
+--Choose room randomly to fit surrounding rooms
+local function choose_room(vm, pos)
+    local options = {}
+    for room_type, room in ipairs(room_types) do
+        for rot = 1, 4 do
+            if room_fits(vm, pos, room_type, rot) then
+                table.insert(options, {room_type, rot, room[2]})
+            end
+        end
+    end
+    local out = weighted_choice(options)
+    if not out[1] then return end
+    return MODPATH.."/schems/"..room_types[out[1]][1]..".mts", tostring(out[2]*90)
+end
+
+--Hospital terrain generation lol
+minetest.register_on_generated(function (minp, maxp)
+    local size = maxp.x-minp.x+1
+
+    --only bother to do stuff if we're under -30000
+    if minp.y > -30000 then return end
+
+    --set up VM data
+    local vm, emin, emax = minetest.get_mapgen_object("voxelmanip")
+    local area = VoxelArea:new({MinEdge=emin, MaxEdge=emax})
+    vm:get_data(vm_data)
+
+    --place layers on top and bottom
+    for y, id in pairs(layers) do
+        if minp.y <= y and maxp.y >= y then
+            for z = minp.z, maxp.z do
+                local vi = area:index(minp.x, y, z)-1
+                for i = 1, size do
+                    vm_data[vi+i] = id
+                end
+            end
+        end
+    end
+    vm:set_data(vm_data)
+
+    --generate all rooms with their centers in the chunk
+    for x = math.ceil(minp.x/7), math.floor(maxp.x/7) do
+        for y = math.ceil(math.max(minp.y+30911, 0)*0.2), math.floor(math.min(maxp.y+30911, 905)*0.2) do
+            for z = math.ceil(minp.z/7), math.floor(maxp.z/7) do
+                local pos = vector.new(x*7, y*5-30911, z*7)
+                local schem, rot = choose_room(vm, pos+vector.new(0, 1, 0))
+                if schem then minetest.place_schematic_on_vmanip(vm, pos, schem, rot, {}, true, "place_center_x, place_center_z") end
+            end
+        end
+    end
+
+    --finish up and save data
+    vm:calc_lighting()
+    vm:write_to_map()
+    vm:update_liquids()
+end)
