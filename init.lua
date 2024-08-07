@@ -1,7 +1,7 @@
 --Settings
-local LIFETIME = minetest.settings:get("tidepod_clean_lifetime") or 120
+local LIFETIME = minetest.settings:get("laundry_clean_lifetime") or 120
 local AMBIENT_LIGHT = math.min(math.max(minetest.settings:get("hospital_ambient_light") or 5, 0), 14)
-local MODPATH = minetest.get_modpath("tidepod_zero")
+local MODPATH = minetest.get_modpath("laundry_zero")
 
 --Particles
 local function clean_particles(pos)
@@ -113,13 +113,13 @@ end
 
 --New quests for tidepod-related stuff
 table.insert_all(quests, {
-    {title="Laundry Detergent", text="Did you know you can make detergent as well for some reason? Just craft a Tide Pod Generator using a Conversion Chamber (that's a Matter Blob, a Matter Annihilator and a Retaining Circuit), along with 4 Core Dust, 3 Stone and a Simple Charged Field. Once you've done that, insert Charged Particles into it and it'll turn them into Tide Pods."},
-    {title="Cleaning Things", text="So once you have Tide Pods, what can you do with them? They're meant for cleaning clothes, but apparently you're some kind of disembodied particle trail, you don't have clothes. Wait, that means you're naked. That's weird.\n\nBut what you CAN do with them is clean things. If you use a Tide Pod on a machine it'll make it cleaner and more efficient for a little while - and the effect does stack! Try using it on stuff and see what happens.\n\nBut DON'T EAT THEM. They're not good for you."}
+    {title="Laundry Detergent", text="Did you know you can make detergent as well for some reason? Just craft a Detergent Generator using a Conversion Chamber (that's a Matter Blob, a Matter Annihilator and a Retaining Circuit), along with 4 Core Dust, 3 Stone and a Simple Charged Field. Once you've done that, insert Charged Particles into it and it'll turn them into Detergent Pods."},
+    {title="Cleaning Things", text="So once you have Detergent Pods, what can you do with them? They're meant for cleaning clothes, but apparently you're some kind of disembodied particle trail, you don't have clothes. Wait, that means you're naked. That's weird.\n\nBut what you CAN do with them is clean things. If you use a Detergent Pod on a machine it'll make it cleaner and more efficient for a little while - and the effect does stack! Try using it on stuff and see what happens.\n\nBut DON'T EAT THEM. They're not good for you."}
 })
 
 local secret_quests = {
-    ["Tide Pod Challenge"] = "You really did it, didn't you. You ate a Tide Pod. You awful person. See what it did to you.\n\n...I wonder what would happen if you did it again.",
-    ["Backrooms...?"] = "Looks like you've eaten too many Tide Pods and been taken to hospital. We've lost all trace of the Core and can't beam you back - but there might be some other way of getting back from here.",
+    ["Tide Pod Challenge"] = "You really did it, didn't you. You ate a Detergent Pod. You awful person. See what it did to you.\n\n...I wonder what would happen if you did it again.",
+    ["Backrooms...?"] = "Looks like you've eaten too many Detergent Pods and been taken to hospital. We've lost all trace of the Core and can't beam you back - but there might be some other way of getting back from here.",
     ["Back to Normal"] = "Thankfully you've escaped the hospital; now you can get back to your generating and extracting.\n\nI hope it wasn't too quick though, I did put some work into that! If I find out you spawned right next to the portal I'll be rather pissed."
 }
 
@@ -134,13 +134,13 @@ local function grant_secret_achievement(player, name)
 end
 
 --Tidepod generator node, place a charged particle on it to turn it into a tidepod, uses no power
-minetest.register_node("tidepod_zero:tidepod_generator", {
-    description = "Tide Pod Generator",
+minetest.register_node("laundry_zero:detergent_generator", {
+    description = "Detergent Generator",
     tiles = {"organic_converter.png^tidepod.png"},
     groups = {matter=1},
     on_rightclick = function (pos, node, user, itemstack)
         local inv = user:get_inventory()
-        local tidepod = ItemStack("tidepod_zero:tidepod")
+        local tidepod = ItemStack("laundry_zero:detergent_pod")
         if itemstack:get_name() == "sbz_resources:charged_particle" and inv:room_for_item("main", tidepod) then
             itemstack:take_item()
             inv:add_item("main", tidepod)
@@ -152,7 +152,7 @@ minetest.register_node("tidepod_zero:tidepod_generator", {
 })
 
 minetest.register_craft({
-    output = "tidepod_zero:tidepod_generator",
+    output = "laundry_zero:detergent_generator",
     recipe = {
         {"sbz_resources:core_dust", "sbz_resources:stone", "sbz_resources:core_dust"},
         {"sbz_resources:stone", "sbz_resources:conversion_chamber", "sbz_resources:stone"},
@@ -232,7 +232,7 @@ end)
 --Cleanable nodes and their cleaned equivalents
 local cleaned = {
     ["sbz_resources:charged_field_residue"] = "sbz_resources:simple_charged_field",
-    ["tidepod_zero:cleaned_matter_blob"] = "tidepod_zero:cleaned_cleaned_matter_blob"
+    ["laundry_zero:cleaned_matter_blob"] = "laundry_zero:cleaned_cleaned_matter_blob"
 }
 
 local intervals = {}
@@ -268,8 +268,8 @@ local function clean_node(pos)
 end
 
 --Tidepod, may be placed on machines to make them more efficient, or eaten to make you sick
-minetest.register_craftitem("tidepod_zero:tidepod", {
-    description = "Tide Pod",
+minetest.register_craftitem("laundry_zero:detergent_pod", {
+    description = "Detergent Pod",
     inventory_image = "tidepod.png",
     on_use = function (itemstack, user)
         local meta = user:get_meta()
@@ -327,7 +327,7 @@ end
 --Automatically make cleaned node from normal node
 local function register_cleaned_node(nodename, cleaner, delayed)
     local defs = table.copy(minetest.registered_nodes[nodename])
-    local newname = "tidepod_zero:cleaned_"..string.sub(nodename, 15)
+    local newname = "laundry_zero:cleaned_"..string.sub(nodename, 15)
     defs.description = "Cleaned "..defs.description
     defs.on_timer = function (pos)
         local node = minetest.get_node(pos)
@@ -361,7 +361,7 @@ register_cleaned_node("sbz_resources:simple_matter_extractor")
 register_cleaned_node("sbz_resources:advanced_matter_extractor")
 register_cleaned_node("sbz_resources:simple_charge_generator", false, true)
 
-minetest.register_node("tidepod_zero:cleaned_cleaned_matter_blob", {
+minetest.register_node("laundry_zero:cleaned_cleaned_matter_blob", {
     description = "Cleaned Cleaned Matter Blob",
     tiles = {"cleanest.png"},
     groups = {matter=1, cracky=3},
@@ -372,7 +372,7 @@ minetest.register_node("tidepod_zero:cleaned_cleaned_matter_blob", {
 })
 
 --Various nodes found in the hospital
-minetest.register_node("tidepod_zero:cleaned_air", {
+minetest.register_node("laundry_zero:cleaned_air", {
     description = "| || || |_",
     drawtype = "airlike",
     walkable = false,
@@ -382,7 +382,7 @@ minetest.register_node("tidepod_zero:cleaned_air", {
     light_source = AMBIENT_LIGHT
 })
 
-minetest.register_node("tidepod_zero:super_clean", {
+minetest.register_node("laundry_zero:super_clean", {
     description = "Super Clean",
     tiles = {"cleanest.png"},
     sounds = {footstep={name="step", gain=1.0}},
@@ -391,7 +391,7 @@ minetest.register_node("tidepod_zero:super_clean", {
     end
 })
 
-minetest.register_node("tidepod_zero:cleaned_floor", {
+minetest.register_node("laundry_zero:cleaned_floor", {
     description = "Cleaned Floor",
     tiles = {"cleaned_floor.png"},
     sounds = {footstep={name="step", gain=1.0}},
@@ -400,7 +400,7 @@ minetest.register_node("tidepod_zero:cleaned_floor", {
     end
 })
 
-minetest.register_node("tidepod_zero:bed_head", {
+minetest.register_node("laundry_zero:bed_head", {
     description = "Bed Head",
     drawtype = "nodebox",
     node_box = {type="fixed", fixed={
@@ -414,7 +414,7 @@ minetest.register_node("tidepod_zero:bed_head", {
     sunlight_propagates = true
 })
 
-minetest.register_node("tidepod_zero:bed_foot", {
+minetest.register_node("laundry_zero:bed_foot", {
     description = "Bed Foot",
     drawtype = "nodebox",
     node_box = {type="fixed", fixed={
@@ -427,7 +427,7 @@ minetest.register_node("tidepod_zero:bed_foot", {
     paramtype2 = "4dir",
     sunlight_propagates = true
 })
-minetest.register_node("tidepod_zero:blue_cross", {
+minetest.register_node("laundry_zero:blue_cross", {
     description = "Blue Cross",
     drawtype = "signlike",
     tiles = {"blue_cross.png"},
@@ -439,7 +439,7 @@ minetest.register_node("tidepod_zero:blue_cross", {
     pointable = false
 })
 
-minetest.register_node("tidepod_zero:cleaned_slab_lower", {
+minetest.register_node("laundry_zero:cleaned_slab_lower", {
     description = "Cleaned Slab",
     drawtype = "nodebox",
     node_box = {type="fixed", fixed={-0.5, -0.5, -0.5, 0.5, 0, 0.5}},
@@ -452,7 +452,7 @@ minetest.register_node("tidepod_zero:cleaned_slab_lower", {
     end
 })
 
-minetest.register_node("tidepod_zero:cleaned_slab_upper", {
+minetest.register_node("laundry_zero:cleaned_slab_upper", {
     description = "Cleaned Slab",
     drawtype = "nodebox",
     node_box = {type="fixed", fixed={-0.5, 0, -0.5, 0.5, 0.5, 0.5}},
@@ -465,7 +465,7 @@ minetest.register_node("tidepod_zero:cleaned_slab_upper", {
     end
 })
 
-minetest.register_node("tidepod_zero:cleaned_glass", {
+minetest.register_node("laundry_zero:cleaned_glass", {
     description = "Cleaned Glass",
     drawtype = "glasslike",
     tiles = {"cleaned_glass.png^[opacity:224"},
@@ -473,7 +473,7 @@ minetest.register_node("tidepod_zero:cleaned_glass", {
     paramtype = "light"
 })
 
-minetest.register_craftitem("tidepod_zero:remover", {
+minetest.register_craftitem("laundry_zero:remover", {
     description = "Remover",
     inventory_image = "matter_annihilator.png",
     stack_max = 1,
@@ -485,14 +485,14 @@ minetest.register_craftitem("tidepod_zero:remover", {
 })
 
 do
-    local defs = table.copy(minetest.registered_nodes["tidepod_zero:tidepod_generator"])
+    local defs = table.copy(minetest.registered_nodes["laundry_zero:detergent_generator"])
     defs.groups = {}
     defs.description = "Unbreakable "..defs.description
-    minetest.register_node("tidepod_zero:unbreakable_tidepod_generator", defs)
+    minetest.register_node("laundry_zero:unbreakable_detergent_generator", defs)
 end
 
 --Portal, special hospital node which teleports you to the core on entering
-minetest.register_node("tidepod_zero:portal", {
+minetest.register_node("laundry_zero:portal", {
     description = "Portal",
     drawtype = "nodebox",
     node_box = {type="fixed", fixed={-0.5, -0.5, -0.5, 0.5, 0, 0.5}},
@@ -508,7 +508,7 @@ minetest.register_node("tidepod_zero:portal", {
 })
 
 minetest.register_abm({
-    nodenames = {"tidepod_zero:portal"},
+    nodenames = {"laundry_zero:portal"},
     interval = 1,
     chance = 2,
     action = function (pos)
@@ -522,7 +522,7 @@ local core_pos = vector.new(0, 1, 0)
 
 minetest.register_globalstep(function()
     for _, player in ipairs(minetest.get_connected_players()) do
-        if minetest.get_node(vector.apply(player:get_pos()+vector.new(0, 0.01, 0), math.round)).name == "tidepod_zero:portal" then
+        if minetest.get_node(vector.apply(player:get_pos()+vector.new(0, 0.01, 0), math.round)).name == "laundry_zero:portal" then
             player:set_pos(core_pos)
             minetest.add_particlespawner(teleport_particles(core_pos))
             grant_secret_achievement(player, "Back to Normal")
@@ -551,9 +551,9 @@ local storage = minetest.get_mod_storage()
 local room_queue = minetest.deserialize(storage:get("room_queue") or "return {}")
 
 local layers = {
-    [-30912] = minetest.get_content_id("tidepod_zero:super_clean"),
-    [-30001] = minetest.get_content_id("tidepod_zero:super_clean"),
-    [-30000] = minetest.get_content_id("tidepod_zero:portal")
+    [-30912] = minetest.get_content_id("laundry_zero:super_clean"),
+    [-30001] = minetest.get_content_id("laundry_zero:super_clean"),
+    [-30000] = minetest.get_content_id("laundry_zero:portal")
 }
 
 local room_types = {
@@ -570,9 +570,9 @@ local room_types = {
 
 local up = vector.new(0, 5, 0)
 
-local undecided = {"air", "ignore", "tidepod_zero:cleaned_glass"}
+local undecided = {"air", "ignore", "laundry_zero:cleaned_glass"}
 
-local c_glass = minetest.get_content_id("tidepod_zero:cleaned_glass")
+local c_glass = minetest.get_content_id("laundry_zero:cleaned_glass")
 
 local glass_cache = {[0]={[0]=false}}
 
@@ -599,7 +599,7 @@ local function room_fits(vm, pos, room_type, rot, ignore_other)
     for i = 0, 3 do
         local testpos = pos+minetest.fourdir_to_dir((i+3)%4)*4 --I spent SO FUCKING LONG trying to find the bug and all I had to do was rotate this? I'm gonna kill somebody
         local testnode = vm:get_node_at(testpos).name
-        if table.indexof(undecided, testnode) < 0 and tuple[2][i+1] ~= (testnode == "tidepod_zero:cleaned_air") then return false end
+        if table.indexof(undecided, testnode) < 0 and tuple[2][i+1] ~= (testnode == "laundry_zero:cleaned_air") then return false end
     end
     if ignore_other then return true end
     return (room_type ~= 6 or room_fits(vm, pos+up, 7, rot, true))
@@ -707,3 +707,16 @@ minetest.register_on_generated(function (minp, maxp)
     vm:write_to_map()
     vm:update_liquids()
 end)
+
+--Aliases for schematics
+minetest.register_alias("tidepod_zero:super_clean", "laundry_zero:super_clean")
+minetest.register_alias("tidepod_zero:cleaned_air", "laundry_zero:cleaned_air")
+minetest.register_alias("tidepod_zero:cleaned_floor", "laundry_zero:cleaned_floor")
+minetest.register_alias("tidepod_zero:blue_cross", "laundry_zero:blue_cross")
+minetest.register_alias("tidepod_zero:unbreakable_tidepod_generator", "laundry_zero:unbreakable_detergent_generator")
+minetest.register_alias("tidepod_zero:cleaned_glass", "laundry_zero:cleaned_glass")
+minetest.register_alias("tidepod_zero:portal", "laundry_zero:portal")
+minetest.register_alias("tidepod_zero:cleaned_slab_lower", "laundry_zero:cleaned_slab_lower")
+minetest.register_alias("tidepod_zero:cleaned_slab_upper", "laundry_zero:cleaned_slab_upper")
+minetest.register_alias("tidepod_zero:bed_head", "laundry_zero:bed_head")
+minetest.register_alias("tidepod_zero:bed_foot", "laundry_zero:bed_foot")
