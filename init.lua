@@ -464,6 +464,14 @@ minetest.register_node("tidepod_zero:cleaned_slab_upper", {
     end
 })
 
+minetest.register_node("tidepod_zero:cleaned_glass", {
+    description = "Cleaned Glass",
+    drawtype = "glasslike",
+    tiles = {"cleaned_glass.png^[opacity:224"},
+    use_texture_alpha = "blend",
+    paramtype = "light"
+})
+
 minetest.register_craftitem("tidepod_zero:remover", {
     description = "Remover",
     inventory_image = "matter_annihilator.png",
@@ -558,6 +566,14 @@ local room_types = {
     {"hospital_storage", 2, {true, false, false, false}}
 }
 
+local up = vector.new(0, 5, 0)
+
+local undecided = {"air", "ignore", "tidepod_zero:cleaned_glass"}
+
+local c_glass = minetest.get_content_id("tidepod_zero:cleaned_glass")
+
+local glass_cache = {[0]={[0]=false}}
+
 --Some basic room functions
 local function rotate_connects(connects, rot)
     if rot == 0 then return connects end
@@ -571,8 +587,6 @@ local function place_room(vm, pos, room)
     minetest.place_schematic_on_vmanip(vm, pos, MODPATH.."/schems/"..room_types[room[1]][1]..".mts", tostring(room[2]*90), {}, true, "place_center_x, place_center_z")
 end
 
-local up = vector.new(0, 5, 0)
-
 local function room_fits(vm, pos, room_type, rot, ignore_other)
     local current_node = vm:get_node_at(pos).name
     if current_node ~= "air" and current_node ~= "ignore" then return false end
@@ -581,7 +595,7 @@ local function room_fits(vm, pos, room_type, rot, ignore_other)
     for i = 0, 3 do
         local testpos = pos+minetest.fourdir_to_dir((i+3)%4)*4 --I spent SO FUCKING LONG trying to find the bug and all I had to do was rotate this? I'm gonna kill somebody
         local testnode = vm:get_node_at(testpos).name
-        if testnode ~= "air" and testnode ~= "ignore" and tuple[2][i+1] ~= (testnode == "tidepod_zero:cleaned_air") then return false end
+        if table.indexof(undecided, testnode) < 0 and tuple[2][i+1] ~= (testnode == "tidepod_zero:cleaned_air") then return false end
     end
     if ignore_other then return true end
     return (room_type ~= 6 or room_fits(vm, pos+up, 7, rot, true))
@@ -600,6 +614,16 @@ local function weighted_choice(options)
         if pointer < 0 then return {tuple[1], tuple[2]} end
     end
     return {nil, nil} --shouldn't ever happen
+end
+
+local function is_glass(x, z)
+    x = math.round(x/21)
+    z = math.round(z/21)
+    glass_cache[x] = glass_cache[x] or {}
+    if glass_cache[x][z] == nil then
+        glass_cache[x][z] = (PcgRandom(x+PcgRandom(z):next()):next(0, 9) == 0)
+    end
+    return glass_cache[x][z]
 end
 
 --Choose room randomly to fit surrounding rooms
@@ -638,6 +662,21 @@ minetest.register_on_generated(function (minp, maxp)
                 local vi = area:index(minp.x, y, z)-1
                 for i = 1, size do
                     vm_data[vi+i] = id
+                end
+            end
+        end
+    end
+
+    --add occasional shafts of glass
+    for y = minp.y, maxp.y do
+        if y > -30912 and y < -30001 then
+            for z = minp.z, maxp.z do
+                local vi = area:index(minp.x, y, z)
+                for x = minp.x, maxp.x do
+                    if is_glass(x, z) then
+                        vm_data[vi] = c_glass
+                    end
+                    vi = vi+1
                 end
             end
         end
