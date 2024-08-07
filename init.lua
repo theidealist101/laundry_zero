@@ -549,6 +549,9 @@ minetest.override_chatcommand("core", {
 --Terrain generation data
 local vm_data = {}
 
+local storage = minetest.get_mod_storage()
+local room_queue = minetest.deserialize(storage:get("room_queue") or "return {}")
+
 local layers = {
     [-30912] = minetest.get_content_id("tidepod_zero:super_clean"),
     [-30001] = minetest.get_content_id("tidepod_zero:super_clean"),
@@ -576,17 +579,41 @@ local function rotate_connects(connects, rot)
     return connects
 end
 
-local function room_fits(vm, pos, room_type, rot)
+local function queue_room(pos, room)
+    room_queue[pos.x] = room_queue[pos.x] or {}
+    room_queue[pos.x][pos.y] = room_queue[pos.x][pos.y] or {}
+    room_queue[pos.x][pos.y][pos.z] = room
+end
+
+local function get_queued_room(pos)
+    return room_queue[pos.x] and room_queue[pos.x][pos.y] and room_queue[pos.x][pos.y][pos.z]
+end
+
+local function unqueue_room(pos)
+    if not get_queued_room(pos) then return end
+    room_queue[pos.x][pos.y][pos.z] = nil
+    if #room_queue[pos.x][pos.y] == 0 then room_queue[pos.x][pos.y] = nil end
+    if #room_queue[pos.x] == 0 then room_queue[pos.x] = nil end
+end
+
+local up = vector.new(0, 5, 0)
+local left = vector.new(7, 0, 0)
+local right = vector.new(0, 0, 7)
+
+local function room_fits(vm, pos, room_type, rot, ignore_other)
+    if get_queued_room(pos) then return false end
+    local current_node = minetest.get_node(pos).name
+    if current_node ~= "air" and current_node ~= "ignore" then return false end
     local tuple = room_types[room_type]
     tuple = {tuple[1], rotate_connects(tuple[3], rot)}
     for i = 0, 3 do
         local testpos = pos+minetest.fourdir_to_dir((i+3)%4)*4 --I spent SO FUCKING LONG trying to find the bug and all I had to do was rotate this? I'm gonna kill somebody
         local testnode = vm:get_node_at(testpos).name
-        if testnode ~= "air" and testnode ~= "ignore" and tuple[2][i+1] ~= (testnode == "tidepod_zero:cleaned_air") then
-            return false
-        end
+        if testnode ~= "air" and testnode ~= "ignore" and tuple[2][i+1] ~= (testnode == "tidepod_zero:cleaned_air") then return false end
     end
-    return true
+    if not ignore_other then return true end
+    return (room_type ~= 6 or room_fits(vm, pos+up, 7, rot, true))
+    and (room_type ~= 7 or room_fits(vm, pos-up, 6, rot, true))
 end
 
 local function weighted_choice(options)
@@ -606,15 +633,22 @@ end
 --Choose room randomly to fit surrounding rooms
 local function choose_room(vm, pos)
     local options = {}
-    for room_type, room in ipairs(room_types) do
-        for rot = 1, 4 do
-            if room_fits(vm, pos, room_type, rot) then
-                table.insert(options, {room_type, rot, room[2]})
+    local out = get_queued_room(pos)
+    if out then
+        unqueue_room(pos)
+    else
+        for room_type, room in ipairs(room_types) do
+            for rot = 1, 4 do
+                if room_fits(vm, pos, room_type, rot) then
+                    table.insert(options, {room_type, rot, room[2]})
+                end
             end
         end
+        out = weighted_choice(options)
     end
-    local out = weighted_choice(options)
     if not out[1] then return end
+    if out[1] == 6 then queue_room(pos+up, {7, out[2]})
+    elseif out[1] == 7 then queue_room(pos-up, {6, out[2]}) end
     return MODPATH.."/schems/"..room_types[out[1]][1]..".mts", tostring(out[2]*90)
 end
 
@@ -655,6 +689,7 @@ minetest.register_on_generated(function (minp, maxp)
     end
 
     --finish up and save data
+    storage:set_string("room_queue", room_queue)
     vm:calc_lighting()
     vm:write_to_map()
     vm:update_liquids()
