@@ -343,7 +343,7 @@ local function register_cleaned_node(nodename, cleaner, delayed)
                 return true
             end
             intervals[newname] = abm_defs.interval*(delayed and 1.25 or 0.8)
-            delays[newname] = true
+            delays[newname] = delayed
             break
         end
     end
