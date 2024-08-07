@@ -483,22 +483,10 @@ do
 end
 
 --Portal, special hospital node which teleports you to the core on entering
-do
-    local defs = table.copy(minetest.registered_nodes["tidepod_zero:tidepod_generator"])
-    defs.groups = {}
-    defs.description = "Unbreakable "..defs.description
-    minetest.register_node("tidepod_zero:unbreakable_tidepod_generator", defs)
-end
-
---Portal, special hospital node which teleports you to the core on entering
 minetest.register_node("tidepod_zero:portal", {
     description = "Portal",
     drawtype = "nodebox",
     node_box = {type="fixed", fixed={-0.5, -0.5, -0.5, 0.5, 0, 0.5}},
-    tiles = {{name="portal.png^[opacity:224", animation={type="vertical_frames", length=0.3}}, "blank.png"},
-    inventory_image = "portal.png^[verticalframe:2:1",
-    wield_image = "portal.png^[verticalframe:2:1",
-    use_texture_alpha = "blend",
     tiles = {{name="portal.png^[opacity:224", animation={type="vertical_frames", length=0.3}}, "blank.png"},
     inventory_image = "portal.png^[verticalframe:2:1",
     wield_image = "portal.png^[verticalframe:2:1",
