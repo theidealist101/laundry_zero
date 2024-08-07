@@ -584,8 +584,6 @@ local function place_room(vm, pos, room)
 end
 
 local up = vector.new(0, 5, 0)
-local left = vector.new(7, 0, 0)
-local right = vector.new(0, 0, 7)
 
 local function room_fits(vm, pos, room_type, rot, ignore_other)
     local current_node = vm:get_node_at(pos).name
@@ -597,7 +595,7 @@ local function room_fits(vm, pos, room_type, rot, ignore_other)
         local testnode = vm:get_node_at(testpos).name
         if testnode ~= "air" and testnode ~= "ignore" and tuple[2][i+1] ~= (testnode == "tidepod_zero:cleaned_air") then return false end
     end
-    if not ignore_other then return true end
+    if ignore_other then return true end
     return (room_type ~= 6 or room_fits(vm, pos+up, 7, rot, true))
     and (room_type ~= 7 or room_fits(vm, pos-up, 6, rot, true))
 end
