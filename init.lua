@@ -576,6 +576,8 @@ local c_glass = minetest.get_content_id("tidepod_zero:cleaned_glass")
 
 local glass_cache = {[0]={[0]=false}}
 
+minetest.set_mapgen_setting("mg_flags", "nocaves", true)
+
 --Some basic room functions
 local function rotate_connects(connects, rot)
     if rot == 0 then return connects end
