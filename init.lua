@@ -579,21 +579,8 @@ local function rotate_connects(connects, rot)
     return connects
 end
 
-local function queue_room(pos, room)
-    room_queue[pos.x] = room_queue[pos.x] or {}
-    room_queue[pos.x][pos.y] = room_queue[pos.x][pos.y] or {}
-    room_queue[pos.x][pos.y][pos.z] = room
-end
-
-local function get_queued_room(pos)
-    return room_queue[pos.x] and room_queue[pos.x][pos.y] and room_queue[pos.x][pos.y][pos.z]
-end
-
-local function unqueue_room(pos)
-    if not get_queued_room(pos) then return end
-    room_queue[pos.x][pos.y][pos.z] = nil
-    if #room_queue[pos.x][pos.y] == 0 then room_queue[pos.x][pos.y] = nil end
-    if #room_queue[pos.x] == 0 then room_queue[pos.x] = nil end
+local function place_room(vm, pos, room)
+    minetest.place_schematic_on_vmanip(vm, pos, MODPATH.."/schems/"..room_types[room[1]][1]..".mts", tostring(room[2]*90), {}, true, "place_center_x, place_center_z")
 end
 
 local up = vector.new(0, 5, 0)
@@ -601,7 +588,7 @@ local left = vector.new(7, 0, 0)
 local right = vector.new(0, 0, 7)
 
 local function room_fits(vm, pos, room_type, rot, ignore_other)
-    if get_queued_room(pos) then return false end
+    pos = pos+vector.new(0, 1, 0)
     local current_node = minetest.get_node(pos).name
     if current_node ~= "air" and current_node ~= "ignore" then return false end
     local tuple = room_types[room_type]
@@ -633,23 +620,18 @@ end
 --Choose room randomly to fit surrounding rooms
 local function choose_room(vm, pos)
     local options = {}
-    local out = get_queued_room(pos)
-    if out then
-        unqueue_room(pos)
-    else
-        for room_type, room in ipairs(room_types) do
-            for rot = 1, 4 do
-                if room_fits(vm, pos, room_type, rot) then
-                    table.insert(options, {room_type, rot, room[2]})
-                end
+    for room_type, room in ipairs(room_types) do
+        for rot = 1, 4 do
+            if room_fits(vm, pos, room_type, rot) then
+                table.insert(options, {room_type, rot, room[2]})
             end
         end
-        out = weighted_choice(options)
     end
+    local out = weighted_choice(options)
     if not out[1] then return end
-    if out[1] == 6 then queue_room(pos+up, {7, out[2]})
-    elseif out[1] == 7 then queue_room(pos-up, {6, out[2]}) end
-    return MODPATH.."/schems/"..room_types[out[1]][1]..".mts", tostring(out[2]*90)
+    if out[1] == 6 then place_room(vm, pos+up, {7, out[2]})
+    elseif out[1] == 7 then place_room(vm, pos-up, {6, out[2]}) end
+    return out
 end
 
 --Hospital terrain generation lol
@@ -682,8 +664,8 @@ minetest.register_on_generated(function (minp, maxp)
         for y = math.ceil(math.max(minp.y+30911, 0)*0.2), math.floor(math.min(maxp.y+30911, 905)*0.2) do
             for z = math.ceil(minp.z/7), math.floor(maxp.z/7) do
                 local pos = vector.new(x*7, y*5-30911, z*7)
-                local schem, rot = choose_room(vm, pos+vector.new(0, 1, 0))
-                if schem then minetest.place_schematic_on_vmanip(vm, pos, schem, rot, {}, true, "place_center_x, place_center_z") end
+                local room = choose_room(vm, pos)
+                if room then place_room(vm, pos, room) end
             end
         end
     end
