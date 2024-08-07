@@ -119,7 +119,8 @@ table.insert_all(quests, {
 
 local secret_quests = {
     ["Tide Pod Challenge"] = "You really did it, didn't you. You ate a Tide Pod. You awful person. See what it did to you.\n\n...I wonder what would happen if you did it again.",
-    ["Backrooms...?"] = "Looks like you've eaten too many Tide Pods and been taken to hospital. We've lost all trace of the Core and can't beam you back - but there might be some other way of getting back from here."
+    ["Backrooms...?"] = "Looks like you've eaten too many Tide Pods and been taken to hospital. We've lost all trace of the Core and can't beam you back - but there might be some other way of getting back from here.",
+    ["Back to Normal"] = "Thankfully you've escaped the hospital; now you can get back to your generating and extracting.\n\nI hope it wasn't too quick though, I did put some work into that! If I find out you spawned right next to the portal I'll be rather pissed."
 }
 
 --Secret quests for tidepod eating
@@ -521,9 +522,10 @@ local core_pos = vector.new(0, 1, 0)
 
 minetest.register_globalstep(function()
     for _, player in ipairs(minetest.get_connected_players()) do
-        if minetest.get_node(vector.apply(player:get_pos(), math.round)).name == "tidepod_zero:portal" then
+        if minetest.get_node(vector.apply(player:get_pos()+vector.new(0, 0.01, 0), math.round)).name == "tidepod_zero:portal" then
             player:set_pos(core_pos)
             minetest.add_particlespawner(teleport_particles(core_pos))
+            grant_secret_achievement(player, "Back to Normal")
             displayDialougeLine(player:get_player_name(), "Beamed you back to the Core.")
         end
     end
