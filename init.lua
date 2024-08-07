@@ -588,8 +588,7 @@ local left = vector.new(7, 0, 0)
 local right = vector.new(0, 0, 7)
 
 local function room_fits(vm, pos, room_type, rot, ignore_other)
-    pos = pos+vector.new(0, 1, 0)
-    local current_node = minetest.get_node(pos).name
+    local current_node = vm:get_node_at(pos).name
     if current_node ~= "air" and current_node ~= "ignore" then return false end
     local tuple = room_types[room_type]
     tuple = {tuple[1], rotate_connects(tuple[3], rot)}
@@ -622,7 +621,7 @@ local function choose_room(vm, pos)
     local options = {}
     for room_type, room in ipairs(room_types) do
         for rot = 1, 4 do
-            if room_fits(vm, pos, room_type, rot) then
+            if room_fits(vm, pos+vector.new(0, 1, 0), room_type, rot) then
                 table.insert(options, {room_type, rot, room[2]})
             end
         end
@@ -658,6 +657,9 @@ minetest.register_on_generated(function (minp, maxp)
         end
     end
     vm:set_data(vm_data)
+
+    --place cross room at spawn point
+    place_room(vm, vector.new(0, -30501, 0), {2, 0})
 
     --generate all rooms with their centers in the chunk
     for x = math.ceil(minp.x/7), math.floor(maxp.x/7) do
