@@ -5,8 +5,6 @@ A joke mod for the Minetest game Skyblock Zero which adds Detergent Pods which m
 
 Do not eat laundry detergent pods in real life, they are poisonous and can cause death.
 
-This mod is licensed under the MIT license, and all media in it are created by theidealist and fall under CC0.
-
 Features
 ========
 
