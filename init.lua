@@ -147,6 +147,15 @@ table.insert_all(quests, {
     }
 })
 
+--Unbelievably hacky but it works
+local old_unlock = unlock_achievement
+
+function unlock_achievement(playername, achievement)
+    if achievement ~= "Emptiness" or minetest.get_player_by_name(playername):get_pos().y > -30000 then
+        old_unlock(playername, achievement)
+    end
+end
+
 --Tidepod generator node, place a charged particle on it to turn it into a tidepod, uses no power
 minetest.register_node("laundry_zero:detergent_generator", {
     description = "Detergent Generator",
