@@ -13,5 +13,5 @@ Features
 - With lots of cleaning you can make your machines go incredibly fast!
 - Eat Detergent Pods to make yourself violently ill!!!
 - If you're sick for too long, though, you'll get taken to hospital and have to find your way out again.
-- Five new quests, including three secret ones that only appear when completed!
+- Six new quests, including four secret ones that only appear when completed!
 - Only mod made for Skyblock Zero so far! (lol)

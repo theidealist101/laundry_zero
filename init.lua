@@ -143,7 +143,12 @@ table.insert_all(quests, {
     {
         type = "secret",
         title = "Back to Normal",
-        text = "Thankfully you've escaped the hospital; now you can get back to your generating and extracting.\n\nI hope it wasn't too quick though, I did put some work into that! If I find out you spawned right next to the portal I'll be rather pissed."
+        text = "Thankfully you've escaped the hospital; now you can get back to your generating and extracting. (You'll notice you can also make some of the nodes from in there by cleaning matter blobs and crafting them together in certain ways.)\n\nI hope it wasn't too quick though, I did put some work into that! If I find out you spawned right next to the portal I'll be rather pissed."
+    },
+    {
+        type = "secret",
+        title = "Scrubbed Into Oblivion",
+        text = "Oops. Maybe next time, try to not obsessively clean everything over and over to the point of insanity."
     }
 })
 
@@ -255,7 +260,9 @@ end)
 --Cleanable nodes and their cleaned equivalents
 local cleaned = {
     ["sbz_resources:charged_field_residue"] = "sbz_resources:simple_charged_field",
-    ["laundry_zero:cleaned_matter_blob"] = "laundry_zero:cleaned_cleaned_matter_blob"
+    ["laundry_zero:cleaned_matter_blob"] = "laundry_zero:cleaned_cleaned_matter_blob",
+    ["laundry_zero:cleaned_cleaned_matter_blob"] = "laundry_zero:cleaned_cleaned_cleaned_matter_blob",
+    ["laundry_zero:cleaned_cleaned_cleaned_matter_blob"] = "air"
 }
 
 local intervals = {}
@@ -306,6 +313,9 @@ minetest.register_craftitem("laundry_zero:detergent_pod", {
     on_place = function (itemstack, user, pointed)
         if pointed.type == "node" and clean_node(pointed.under) then
             unlock_achievement(user:get_player_name(), "Cleaning Things")
+            if minetest.get_node(pointed.under).name == "air" then
+                unlock_achievement(user:get_player_name(), "Scrubbed Into Oblivion")
+            end
             itemstack:take_item()
             return itemstack
         end
@@ -379,6 +389,7 @@ register_cleaned_node("sbz_resources:simple_matter_extractor")
 register_cleaned_node("sbz_resources:advanced_matter_extractor")
 register_cleaned_node("sbz_resources:simple_charge_generator", false, true)
 
+--Obtainable versions of a few hospital nodes
 minetest.register_node("laundry_zero:cleaned_cleaned_matter_blob", {
     description = "Cleaned Cleaned Matter Blob",
     tiles = {"cleanest.png"},
@@ -387,6 +398,32 @@ minetest.register_node("laundry_zero:cleaned_cleaned_matter_blob", {
     on_punch = function(pos)
         minetest.sound_play("step", {pos=pos, gain=1.0})
     end
+})
+
+minetest.register_node("laundry_zero:cleaned_cleaned_matter_blob_tiles", {
+    description = "Cleaned Cleaned Matter Blob Tiles",
+    tiles = {"cleaned_floor.png"},
+    groups = {matter=1, cracky=3},
+    sounds = {footstep={name="step", gain=1.0}},
+    on_punch = function(pos)
+        minetest.sound_play("step", {pos=pos, gain=1.0})
+    end
+})
+
+minetest.register_craft({
+    output = "laundry_zero:cleaned_cleaned_matter_blob_tiles 4",
+    recipe = {
+        {"laundry_zero:cleaned_cleaned_matter_blob", "laundry_zero:cleaned_cleaned_matter_blob"},
+        {"laundry_zero:cleaned_cleaned_matter_blob", "laundry_zero:cleaned_cleaned_matter_blob"}
+    }
+})
+
+minetest.register_node("laundry_zero:cleaned_cleaned_cleaned_matter_blob", {
+    description = "Cleaned Cleaned Cleaned Matter Blob",
+    drawtype = "glasslike",
+    tiles = {"cleaned_glass.png^[opacity:224"},
+    use_texture_alpha = "blend",
+    paramtype = "light"
 })
 
 --Various nodes found in the hospital
