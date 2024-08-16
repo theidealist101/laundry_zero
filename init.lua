@@ -547,9 +547,6 @@ minetest.override_chatcommand("core", {
 --Terrain generation data
 local vm_data = {}
 
-local storage = minetest.get_mod_storage()
-local room_queue = minetest.deserialize(storage:get("room_queue") or "return {}")
-
 local layers = {
     [-30912] = minetest.get_content_id("laundry_zero:super_clean"),
     [-30001] = minetest.get_content_id("laundry_zero:super_clean"),
@@ -702,7 +699,6 @@ minetest.register_on_generated(function (minp, maxp)
     end
 
     --finish up and save data
-    storage:set_string("room_queue", room_queue)
     vm:calc_lighting()
     vm:write_to_map()
     vm:update_liquids()
