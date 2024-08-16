@@ -113,25 +113,39 @@ end
 
 --New quests for tidepod-related stuff
 table.insert_all(quests, {
-    {title="Laundry Detergent", text="Did you know you can make detergent as well for some reason? Just craft a Detergent Generator using a Conversion Chamber (that's a Matter Blob, a Matter Annihilator and a Retaining Circuit), along with 4 Core Dust, 3 Stone and a Simple Charged Field. Once you've done that, insert Charged Particles into it and it'll turn them into Detergent Pods."},
-    {title="Cleaning Things", text="So once you have Detergent Pods, what can you do with them? They're meant for cleaning clothes, but apparently you're some kind of disembodied particle trail, you don't have clothes. Wait, that means you're naked. That's weird.\n\nBut what you CAN do with them is clean things. If you use a Detergent Pod on a machine it'll make it cleaner and more efficient for a little while - and the effect does stack! Try using it on stuff and see what happens.\n\nBut DON'T EAT THEM. They're not good for you."}
+    {
+        type = "text",
+        title = "Questline: Laundry Zero",
+        text = "Some random weird mod, dunno why you downloaded this but now you've got to live with the consequences."
+    },
+    {
+        type = "quest",
+        title = "Laundry Detergent",
+        requires = {"Annihilator", "Retaining Circuits", "Concrete Plan"},
+        text = "Did you know you can make detergent as well for some reason? Just craft a Detergent Generator using a Conversion Chamber (that's a Matter Blob, a Matter Annihilator and a Retaining Circuit), along with 4 Core Dust, 3 Stone and a Simple Charged Field. Once you've done that, insert Charged Particles into it and it'll turn them into Detergent Pods."
+    },
+    {
+        type = "quest",
+        title = "Cleaning Things",
+        requires = {"Laundry Detergent"},
+        text = "So once you have Detergent Pods, what can you do with them? They're meant for cleaning clothes, but apparently you're some kind of disembodied particle trail, you don't have clothes. Wait, that means you're naked. That's weird.\n\nBut what you CAN do with them is clean things. If you use a Detergent Pod on a machine it'll make it cleaner and more efficient for a little while - and the effect does stack! Try using it on stuff and see what happens.\n\nBut DON'T EAT THEM. They're not good for you."
+    },
+    {
+        type = "secret",
+        title = "Tide Pod Challenge",
+        text = "You really did it, didn't you. You ate a Detergent Pod. You awful person. See what it did to you.\n\n...I wonder what would happen if you did it again."
+    },
+    {
+        type = "secret",
+        title = "Backrooms...?",
+        text = "Looks like you've eaten too many Detergent Pods and been taken to hospital. We've lost all trace of the Core and can't beam you back - but there might be some other way of getting back from here."
+    },
+    {
+        type = "secret",
+        title = "Back to Normal",
+        text = "Thankfully you've escaped the hospital; now you can get back to your generating and extracting.\n\nI hope it wasn't too quick though, I did put some work into that! If I find out you spawned right next to the portal I'll be rather pissed."
+    }
 })
-
-local secret_quests = {
-    ["Tide Pod Challenge"] = "You really did it, didn't you. You ate a Detergent Pod. You awful person. See what it did to you.\n\n...I wonder what would happen if you did it again.",
-    ["Backrooms...?"] = "Looks like you've eaten too many Detergent Pods and been taken to hospital. We've lost all trace of the Core and can't beam you back - but there might be some other way of getting back from here.",
-    ["Back to Normal"] = "Thankfully you've escaped the hospital; now you can get back to your generating and extracting.\n\nI hope it wasn't too quick though, I did put some work into that! If I find out you spawned right next to the portal I'll be rather pissed."
-}
-
---Secret quests for tidepod eating
-local function grant_secret_achievement(player, name)
-    local playername = player:get_player_name()
-    local text = secret_quests[name]
-    if text and not is_achievement_unlocked(playername, name) then
-        table.insert(quests, {title=name, text=secret_quests[name]})
-        unlock_achievement(playername, name)
-    end
-end
 
 --Tidepod generator node, place a charged particle on it to turn it into a tidepod, uses no power
 minetest.register_node("laundry_zero:detergent_generator", {
@@ -219,7 +233,7 @@ minetest.register_globalstep(function(dtime)
             meta:set_float("tidepod_elapsed", tidepod_elapsed+dtime)
             if tidepod_elapsed >= 10 and player:get_pos().y > -30000 then --small chance of going to hospital with one, but with two it's certain
                 player:set_pos(vector.new(0, -30500, 0))
-                grant_secret_achievement(player, "Backrooms...?")
+                unlock_achievement(player:get_player_name(), "Backrooms...?")
             end
         elseif tidepod_elapsed > 0 then
             meta:set_float("tidepod_elapsed", 0)
@@ -275,7 +289,7 @@ minetest.register_craftitem("laundry_zero:detergent_pod", {
         local meta = user:get_meta()
         meta:set_float("tidepod_timeout", meta:get_float("tidepod_timeout")+math.random(5, 10))
         if meta:get_float("tidepod_elapsed") <= 0 then add_sickness_effects(user) end
-        grant_secret_achievement(user, "Tide Pod Challenge")
+        unlock_achievement(user:get_player_name(), "Tide Pod Challenge")
         minetest.add_particlespawner(clean_particles(user:get_pos()))
         itemstack:take_item()
         return itemstack
@@ -295,11 +309,6 @@ minetest.register_on_joinplayer(function(player)
     local meta = player:get_meta()
     if meta:get_float("tidepod_elapsed") > 0 then
         add_sickness_effects(player, true)
-    end
-    for title, text in pairs(secret_quests) do
-        if meta:get_string(title) == "true" then
-            table.insert(quests, {title=title, text=text})
-        end
     end
 end)
 
@@ -525,7 +534,7 @@ minetest.register_globalstep(function()
         if minetest.get_node(vector.apply(player:get_pos()+vector.new(0, 0.01, 0), math.round)).name == "laundry_zero:portal" then
             player:set_pos(core_pos)
             minetest.add_particlespawner(teleport_particles(core_pos))
-            grant_secret_achievement(player, "Back to Normal")
+            unlock_achievement(player:get_player_name(), "Back to Normal")
             displayDialougeLine(player:get_player_name(), "Beamed you back to the Core.")
         end
     end
