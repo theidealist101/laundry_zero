@@ -616,7 +616,7 @@ local room_types = {
     {"hospital_corridor", 3, {false, true, false, true}},
     {"hospital_staircase_bottom", 2, {true, false, false, false}},
     {"hospital_staircase_top", 2, {true, false, false, false}},
-    {"hospital_portal", 1, {true, false, false, false}},
+    {"hospital_portal", 0.5, {true, false, false, false}},
     {"hospital_storage", 2, {true, false, false, false}}
 }
 
@@ -677,7 +677,7 @@ local function is_glass(x, z)
     z = math.round(z/21)
     glass_cache[x] = glass_cache[x] or {}
     if glass_cache[x][z] == nil then
-        glass_cache[x][z] = (PcgRandom(x+PcgRandom(z):next()):next(0, 9) == 0)
+        glass_cache[x][z] = (PcgRandom(x+PcgRandom(z):next()):next(0, 4) == 0)
     end
     return glass_cache[x][z]
 end
